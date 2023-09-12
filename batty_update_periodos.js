@@ -21,13 +21,9 @@ async function connectToOracle() {
 
 async function insertIntoCarS2M() {
   try {
-    // const sql = `
-    //   UPDATE LAPN810P.CAR_S2M 
-    //   SET
-    //     alex_altas = 4,
-    //     alex_bajas = 5
-    //   WHERE periodo = '202308'      
-    // `;
+
+const PERIODO_ANTERIOR = '202307';
+const PERIODO_ACTUAL   = '202308';
 
     const sql = `    
     UPDATE LAPN810P.CAR_S2M
@@ -35,18 +31,14 @@ async function insertIntoCarS2M() {
       SELECT COUNT(DISTINCT dni)
       FROM LAPN810P.CAR_SIGNOS
       WHERE NOT (LQHISLEGPUERCA = '1' AND LQHISLEGPUERJU = '2')
-        AND PERIODO = '202308'
-        AND estadolegajo = 1
-        AND admin_persona = 'S'
-        AND rats <> '9999999'
+        AND PERIODO = '202308' 
+        AND estadolegajo = 1 AND admin_persona = 'S' AND rats <> '9999999'
         AND dni NOT IN (
           SELECT DISTINCT dni
           FROM LAPN810P.CAR_SIGNOS
           WHERE NOT (LQHISLEGPUERCA = '1' AND LQHISLEGPUERJU = '2')
             AND PERIODO = '202307'
-            AND estadolegajo = 1
-            AND admin_persona = 'S'
-            AND rats <> '9999999'
+            AND estadolegajo = 1 AND admin_persona = 'S' AND rats <> '9999999'
         )
     ), alex_bajas = 
     (
@@ -54,17 +46,13 @@ async function insertIntoCarS2M() {
       FROM LAPN810P.CAR_SIGNOS
       WHERE NOT (LQHISLEGPUERCA = '1' AND LQHISLEGPUERJU = '2')
         AND PERIODO = '202307'
-        AND estadolegajo = 1
-        AND admin_persona = 'S'
-        AND rats <> '9999999'
+        AND estadolegajo = 1 AND admin_persona = 'S' AND rats <> '9999999'
         AND dni NOT IN (
           SELECT DISTINCT dni
           FROM LAPN810P.CAR_SIGNOS
           WHERE NOT (LQHISLEGPUERCA = '1' AND LQHISLEGPUERJU = '2')
             AND PERIODO = '202308'
-            AND estadolegajo = 1
-            AND admin_persona = 'S'
-            AND rats <> '9999999'
+            AND estadolegajo = 1 AND admin_persona = 'S' AND rats <> '9999999'
         )
     ), alex_update = (SYSTIMESTAMP)
     where periodo='202308'     `;    
@@ -83,7 +71,32 @@ async function insertIntoCarS2M() {
   }
 }
 
+
+function calcularPeriodos() {
+  // Define el año 2023
+  const ANIO = 2023;
+
+  // Inicia el bucle desde enero (mes 1) hasta diciembre (mes 12)
+  for (let mes = 1; mes <= 12; mes++) {
+    // Formatea el mes como 'MM' con ceros a la izquierda si es necesario
+    const mesActual = mes.toString().padStart(2, '0');
+
+    // Calcula el período actual y el período anterior
+    const PERIODO_ACTUAL = `${ANIO}${mesActual}`;
+    const mesAnterior = mes === 1 ? 12 : mes - 1; // Maneja el caso de enero
+    const mesAnteriorFormateado = mesAnterior.toString().padStart(2, '0');
+    const PERIODO_ANTERIOR = mes === 1 ? `${ANIO - 1}${mesAnteriorFormateado}` : `${ANIO}${mesAnteriorFormateado}`;
+
+    // Muestra los períodos actuales y anteriores
+    console.log(`Período Actual: ${PERIODO_ACTUAL}, Período Anterior: ${PERIODO_ANTERIOR}`);
+  }
+}
+
+
 async function main() {
+
+  calcularPeriodos();
+  
   try {
     await connectToOracle();
 
