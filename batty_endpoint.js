@@ -103,9 +103,7 @@ app.use(cors());
 app.get('/jubilados/:periodo', async (req, res) => {
   try {
     const periodo = req.params.periodo;
-
     const connection = await oracledb.getConnection(oracleConfig);
-
     const result = await connection.execute(`
       SELECT count(*) as cantidad
       FROM LAPN810P.CAR_SIGNOS 
@@ -128,6 +126,33 @@ app.get('/jubilados/:periodo', async (req, res) => {
     res.status(500).json({ error: 'Ocurrió un error al ejecutar la consulta.' }); // Devolvemos un JSON de error
   }
 });
+
+app.get('/jubiladas/:periodo', async (req, res) => {
+    try {
+      const periodo = req.params.periodo;
+      const connection = await oracledb.getConnection(oracleConfig);
+      const result = await connection.execute(`
+        SELECT count(*) as cantidad
+        FROM LAPN810P.CAR_SIGNOS 
+        WHERE estadolegajo=1 
+        AND admin_persona='S' 
+        AND rats<>'9999999' 
+        AND periodo=:periodo
+        AND genero='F' 
+        AND to_number(rtrim(trunc(months_between(sysdate,FECHANACIMIENTO)/12)))>=60
+      `, [periodo]);
+  
+      const count = result.rows[0]['CANTIDAD']; // Cambiamos el nombre de la columna
+  
+      await connection.close();
+  
+      const responseJson = { cantidad: count }; // Creamos un objeto JSON
+  
+      res.json(responseJson); // Devolvemos el JSON como respuesta
+    } catch (error) {
+      res.status(500).json({ error: 'Ocurrió un error al ejecutar la consulta.' }); // Devolvemos un JSON de error
+    }
+  });
 
 const PORT = 3000;
 app.listen(PORT, () => {
