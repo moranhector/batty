@@ -131,6 +131,8 @@ app.get('/jubiladas/:periodo', async (req, res) => {
     try {
       const periodo = req.params.periodo;
       const connection = await oracledb.getConnection(oracleConfig);
+      console.log( 'connection:', connection ); 
+
       const result = await connection.execute(`
         SELECT count(*) as cantidad
         FROM LAPN810P.CAR_SIGNOS 
@@ -154,7 +156,51 @@ app.get('/jubiladas/:periodo', async (req, res) => {
     }
   });
 
+
+  // /////////////
+  // ALTAS Y BAJAS SUMARIZADAS POR PERIODO DESDE CAR_SIGNOS
+
+  app.get('/altasbajas/:periododesde/:periodohasta', async (req, res) => {
+    try {
+      console.log('entro altasbajas');
+      const periododesde = req.params.periododesde;
+
+      const periodohasta = req.params.periodohasta;      
+      console.log( 'periodos:', periododesde, periodohasta );           
+
+      // select periodo, alex_altas, alex_bajas FROM car_s2m where periodo >= '202301' and  periodo <= '202312' order by periodo      
+
+      const connection = await oracledb.getConnection(oracleConfig);
+      // const result = await connection.execute(`
+      // select periodo, alex_altas, alex_bajas FROM car_s2m 
+      // where periodo >= :periododesde and  periodo <= :periodohasta 
+      // order by periodo
+      // `, [periododesde, periodohasta ]);
+
+      console.log( 'connection:', connection );      
+
+      const result = await connection.execute(`
+      SELECT periodo, alex_altas, alex_bajas FROM LAPN810P.CAR_S2M  
+      WHERE periodo >= :periododesde AND periodo <= :periodohasta 
+      ORDER BY periodo
+    `, { periododesde, periodohasta });
+
+      console.log( 'result:', result );
+
+      console.log( 'linea190' );
+      await connection.close();
+  
+      res.json(result); // Devolvemos el JSON como respuesta
+    } catch (error) {
+      console.error('Error en la consulta:', error.message); // Logueamos el error
+      res.status(500).json({ error: 'Ocurrió un error al ejecutar la consulta.' }); // Devolvemos un JSON de error
+    }
+  });
+
+
+
+
 const PORT = 3000;
 app.listen(PORT, () => {
-  console.log(`Servidor iniciado. Accede a http://localhost:${PORT}/jubilados/202307`);
+  console.log(`Servidor iniciado. Accede desde http://localhost:${PORT}/jubilados/202307`);
 });
