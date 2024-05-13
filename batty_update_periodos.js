@@ -1,3 +1,12 @@
+// Aplicación Node.js
+// UPDATE_PERIODOS
+// Sirve para hacer un update de  la tabla car_s2m
+// con un calculo de altas y bajas
+// de los periodos 
+
+
+
+
 const oracledb = require('oracledb');
 oracledb.initOracleClient();
 oracledb.outFormat = oracledb.OUT_FORMAT_OBJECT;
@@ -74,65 +83,6 @@ async function insertIntoCarS2M( PERIODO ) {
 }
 
 
-// async function insertIntoCarS2M( PERIODO ) {
-//   try {
-
-
-// let PERIODO_ACTUAL   = PERIODO ;
-// let PERIODO_ANTERIOR = GetPeriodoAnterior( PERIODO );
-
-
-//     const sql = `    
-//     UPDATE LAPN810P.CAR_S2M
-//     SET alex_altas = (
-//       SELECT COUNT(DISTINCT dni)
-//       FROM LAPN810P.CAR_SIGNOS
-//       WHERE NOT (LQHISLEGPUERCA = '1' AND LQHISLEGPUERJU = '2')
-//         AND PERIODO = '202308' 
-//         AND estadolegajo = 1 AND admin_persona = 'S' AND rats <> '9999999'
-//         AND dni NOT IN (
-//           SELECT DISTINCT dni
-//           FROM LAPN810P.CAR_SIGNOS
-//           WHERE NOT (LQHISLEGPUERCA = '1' AND LQHISLEGPUERJU = '2')
-//             AND PERIODO = '202307'
-//             AND estadolegajo = 1 AND admin_persona = 'S' AND rats <> '9999999'
-//         )
-//     ), alex_bajas = 
-//     (
-//       SELECT COUNT(DISTINCT dni)
-//       FROM LAPN810P.CAR_SIGNOS
-//       WHERE NOT (LQHISLEGPUERCA = '1' AND LQHISLEGPUERJU = '2')
-//         AND PERIODO = '202307'
-//         AND estadolegajo = 1 AND admin_persona = 'S' AND rats <> '9999999'
-//         AND dni NOT IN (
-//           SELECT DISTINCT dni
-//           FROM LAPN810P.CAR_SIGNOS
-//           WHERE NOT (LQHISLEGPUERCA = '1' AND LQHISLEGPUERJU = '2')
-//             AND PERIODO = '202308'
-//             AND estadolegajo = 1 AND admin_persona = 'S' AND rats <> '9999999'
-//         )
-//     ), alex_update = (SYSTIMESTAMP)
-//     where periodo='202308'     `;    
-    
-
-
-
-//     console.log('QUERY', sql);
-//     const connection = await oracledb.getConnection();
-//     const result = await connection.execute(sql);
-//     await connection.commit(); // Agrega esta línea para confirmar la transacción
-//     await connection.release();
-//     console.log('Inserción exitosa.');
-//   } catch (error) {
-//     console.error('Error en la inserción:', error);
-//   }
-// }
-
-
-
-
-
-
 
 function GetPeriodoAnterior(PERIODO) {
   // Obtiene el año y el mes del período proporcionado
@@ -191,15 +141,16 @@ async function main() {
      await connectToOracle();
 
      // Llama a la función para ejecutar la inserción
-     insertIntoCarS2M('202204');     
-     insertIntoCarS2M('202205');     
-     insertIntoCarS2M('202206');     
-     insertIntoCarS2M('202207');     
-     insertIntoCarS2M('202208');     
-     insertIntoCarS2M('202209');     
-     insertIntoCarS2M('202210');                                   
-     insertIntoCarS2M('202211');     
-     insertIntoCarS2M('202212');                                        
+    //  insertIntoCarS2M('202204');     
+    //  insertIntoCarS2M('202205');     
+    //  insertIntoCarS2M('202206');     
+    //  insertIntoCarS2M('202207');     
+    //  insertIntoCarS2M('202208');     
+    //  insertIntoCarS2M('202209');     
+    //  insertIntoCarS2M('202210');                                   
+    //  insertIntoCarS2M('202211');     
+    //  insertIntoCarS2M('202212');                                        
+        insertIntoCarS2M('202309');                                            
 
 
 

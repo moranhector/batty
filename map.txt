@@ -1,0 +1,456 @@
+
+ARTESANIAS
+VISTA DE ALTAS
+CONTROLADOR
+battyM4_CAR_SIGNOSv2.js
+battyM4_CAR_SIGNOSv2.js
+
+project://node_modules\array-flatten\array-flatten.js
+
+
+
+
+Necesito escribir un programa NODE.js 
+
+
+1) Debe conectarse a una Base de Datos Oracle
+La seccion de conexion de Oracle y las credenciales es la siguiente:
+
+const oracledb = require('oracledb');
+oracledb.outFormat = oracledb.OUT_FORMAT_OBJECT;
+const mypw = "i77ShxISNuG5m5iG"   // set mypw to the hr schema password GDE
+
+    const connection = await oracledb.getConnection ({
+        user          : "consulta01",
+        password      : mypw,
+        connectString: 'bbdd.gde4p.mendoza.gov.ar:1521/GDE4P'        //GDE
+    
+    });
+
+*****************************
+
+2) Conectarse también a una base de datos Mysql con las siguientes credenciales
+
+
+const express = require('express');
+const mysql = require('mysql2');
+
+const app = express();
+
+const connection = mysql.createConnection({
+  host: 'dic-alex-tst.mendoza.gov.ar',
+  user: 'alextstdba',
+  password: 'WWnXg7JpW2PVd+aJ',
+  database: 'alextstbbdd'
+});
+
+
+3) Extraer solamente 10 registros de una base de Oracle con la
+siguiente instruccion SQL:
+
+
+SELECT
+  ID,
+  TIPO_OPERACION,
+  FECHA_OPERACION,
+  USUARIO,
+  EXPEDIENTE,
+  ID_EXPEDIENTE,
+  GRUPO_SELECCIONADO,
+  DESTINATARIO,
+  REPARTICION_USUARIO,
+  substr(MOTIVO,0,40) as motivo ,
+  ESTADO_ANTERIOR,
+  LOGGEDUSERNAME,
+  ESTADO,
+  USUARIO_SELECCIONADO,
+  TIPO_OPERACION_DETALLE,
+  TAREA_GRUPAL,
+  SECTOR_USUARIO_ORIGEN,
+  CODIGO_REPARTICION_DESTINO,
+  CODIGO_SECTOR_DESTINO,
+  DESCRIPCION_REPARTICION_ORIGEN,
+  DESCRIPCION_SECTOR_ORIGEN,
+  DESCRIPCION_SECTOR_DESTINO,
+  DESCRIPCION_REPARTICION_DESTIN,
+  CODIGO_JURISDICCION_ORIGEN,
+  CODIGO_JURISDICCION_DESTINO,
+  ORD_HIST
+from ee_ged.historialoperacion 
+where ( codigo_reparticion_destino ='CGPROV#MHYF' or reparticion_usuario ='CGPROV#MHYF')
+and  id > 23657320 order by id
+
+
+4) Insertar esos 10 registros en la tabla Mysql "historialoperaciones"
+
+ La instruccion SQL para insertar en MYSQL  es la siguiente:
+
+INSERT INTO `alex`.`historialoperaciones`
+            (`id`,
+             `TIPO_OPERACION`,
+             `FECHA_OPERACION`,
+             `USUARIO`,
+             `EXPEDIENTE`,
+             `ID_EXPEDIENTE`,
+             `GRUPO_SELECCIONADO`,
+             `DESTINATARIO`,
+             `REPARTICION_USUARIO`,
+             `MOTIVO`,
+             `ESTADO_ANTERIOR`,
+             `LOGGEDUSERNAME`,
+             `ESTADO`,
+             `USUARIO_SELECCIONADO`,
+             `TIPO_OPERACION_DETALLE`,
+             `TAREA_GRUPAL`,
+             `SECTOR_USUARIO_ORIGEN`,
+             `CODIGO_REPARTICION_DESTINO`,
+             `CODIGO_SECTOR_DESTINO`,
+             `DESCRIPCION_REPARTICION_ORIGEN`,
+             `DESCRIPCION_SECTOR_ORIGEN`,
+             `DESCRIPCION_SECTOR_DESTINO`,
+             `DESCRIPCION_REPARTICION_DESTIN`,
+             `CODIGO_JURISDICCION_ORIGEN`,
+             `CODIGO_JURISDICCION_DESTINO`,
+             `ORD_HIST`,
+             `contado`)
+VALUES ('id',
+        'TIPO_OPERACION',
+        'FECHA_OPERACION',
+        'USUARIO',
+        'EXPEDIENTE',
+        'ID_EXPEDIENTE',
+        'GRUPO_SELECCIONADO',
+        'DESTINATARIO',
+        'REPARTICION_USUARIO',
+        'MOTIVO',
+        'ESTADO_ANTERIOR',
+        'LOGGEDUSERNAME',
+        'ESTADO',
+        'USUARIO_SELECCIONADO',
+        'TIPO_OPERACION_DETALLE',
+        'TAREA_GRUPAL',
+        'SECTOR_USUARIO_ORIGEN',
+        'CODIGO_REPARTICION_DESTINO',
+        'CODIGO_SECTOR_DESTINO',
+        'DESCRIPCION_REPARTICION_ORIGEN',
+        'DESCRIPCION_SECTOR_ORIGEN',
+        'DESCRIPCION_SECTOR_DESTINO',
+        'DESCRIPCION_REPARTICION_DESTIN',
+        'CODIGO_JURISDICCION_ORIGEN',
+        'CODIGO_JURISDICCION_DESTINO',
+        'ORD_HIST',
+        'contado');
+
+
+5) Fin del programa 
+
+        
+
+En una aplicación Node.js necesito crear un endpoint que devuelva en JSON los datos de la consulta "SELECT count(*) as cantidad, periodo  from car_signos". Esta tabla está ubicada en la base Oracle LAPN810P. Podrías escribir este servicio ? Te paso el programa donde está el resto de la aplicación: 
+        
+
+const oracledb = require('oracledb');
+oracledb.initOracleClient();
+oracledb.outFormat = oracledb.OUT_FORMAT_OBJECT;
+
+const express = require('express');
+const mysql = require('mysql2');
+const app = express();
+
+let pool; // Variable para almacenar la pool de conexiones
+
+const { oracleConfig, mysqlConfig } = require('./credenciales.js');
+const oracleSQL = 'SELECT * FROM LAPN810P.CAR_S2M'; // Reemplaza con tu consulta Oracle
+
+async function connectToOracle() {
+  try {
+    pool = await oracledb.createPool(oracleConfig); // Almacenar la pool en la variable pool
+    const connection = await oracledb.getConnection();
+    const result = await connection.execute(oracleSQL);
+    //console.log('CONSULTA EN ORACLE:', result);
+    await connection.release();
+
+    return result.rows;
+  } catch (err) {
+    console.error('Error connecting to Oracle:', err);
+    throw err;
+  }
+}
+
+const commonCriteria = `
+  estadolegajo = 1
+  AND admin_persona = 'S'
+  AND rats <> '9999999'
+`;
+
+async function updateCarS2M() {
+  try {
+    const sql1 = `
+      UPDATE LAPN810P.CAR_S2M
+      SET
+        alex_altas = (
+          SELECT COUNT(DISTINCT dni)
+          FROM LAPN810P.CAR_SIGNOS
+          WHERE
+            NOT (LQHISLEGPUERCA = '1' AND LQHISLEGPUERJU = '2')
+            AND PERIODO = '202308'
+            AND ${commonCriteria}
+            AND dni NOT IN (
+              SELECT DISTINCT dni
+              FROM LAPN810P.CAR_SIGNOS
+              WHERE
+                NOT (LQHISLEGPUERCA = '1' AND LQHISLEGPUERJU = '2')
+                AND PERIODO = '202307'
+                AND ${commonCriteria}
+            )
+        ),
+        alex_bajas = (
+          SELECT COUNT(DISTINCT dni)
+          FROM LAPN810P.CAR_SIGNOS
+          WHERE
+            NOT (LQHISLEGPUERCA = '1' AND LQHISLEGPUERJU = '2')
+            AND PERIODO = '202307'
+            AND ${commonCriteria}
+            AND dni NOT IN (
+              SELECT DISTINCT dni
+              FROM LAPN810P.CAR_SIGNOS
+              WHERE
+                NOT (LQHISLEGPUERCA = '1' AND LQHISLEGPUERJU = '2')
+                AND PERIODO = '202308'
+                AND ${commonCriteria}
+            )
+        ),
+        alex_update = (SYSTIMESTAMP)
+      WHERE periodo = '202308';
+    `;
+
+    const sql = `
+      UPDATE LAPN810P.CAR_S2M
+      SET
+        alex_altas = 1,
+        alex_bajas = 1
+      WHERE periodo = '202308'
+    `;
+
+    console.log('QUERY ',sql);
+    const connection = await oracledb.getConnection();
+    const result = connection.execute(sql);
+    connection.release();
+    console.log('Actualización exitosa.');
+  } catch (error) {
+    console.error('Error en la actualización:', error);
+  }
+}
+
+async function main() {
+  try {
+    await connectToOracle();
+
+    // Llama a la función para ejecutar la actualización
+    updateCarS2M();
+  } catch (error) {
+    console.error('Error en la función principal:', error);
+  }
+}
+
+main();
+
+
+
+
+-----------------------------------------------------------------
+
+const oracledb = require('oracledb');
+oracledb.initOracleClient();
+oracledb.outFormat = oracledb.OUT_FORMAT_OBJECT;
+
+const express = require('express');
+const mysql = require('mysql2');
+const app = express();
+
+let pool; // Variable para almacenar la pool de conexiones
+
+const { oracleConfig, mysqlConfig } = require('./credenciales.js');
+const oracleSQL = 'SELECT * FROM LAPN810P.CAR_S2M'; // Reemplaza con tu consulta Oracle
+
+async function connectToOracle() {
+  try {
+    pool = await oracledb.createPool(oracleConfig); // Almacenar la pool en la variable pool
+    const connection = await oracledb.getConnection();
+    const result = await connection.execute(oracleSQL);
+    //console.log('CONSULTA EN ORACLE:', result);
+    await connection.release();
+
+    return result.rows;
+  } catch (err) {
+    console.error('Error connecting to Oracle:', err);
+    throw err;
+  }
+}
+
+const commonCriteria = `
+  estadolegajo = 1
+  AND admin_persona = 'S'
+  AND rats <> '9999999'
+`;
+
+async function updateCarS2M() {
+  try {
+
+
+    const sql = `
+      UPDATE LAPN810P.CAR_S2M
+      SET
+        alex_altas = 1,
+        alex_bajas = 1
+      WHERE periodo = '202308'
+    `;
+
+    console.log('QUERY ',sql);
+    const connection = await oracledb.getConnection();
+    const result = await connection.execute(sql);
+    await connection.commit(); // Agrega esta línea para confirmar la transacción
+    await connection.release();
+    console.log('Actualización exitosa.');
+  } catch (error) {
+    console.error('Error en la actualización:', error);
+  }
+}
+
+async function main() {
+  try {
+    await connectToOracle();
+
+    // Llama a la función para ejecutar la actualización
+    updateCarS2M();
+  } catch (error) {
+    console.error('Error en la función principal:', error);
+  }
+}
+
+main();
+
+
+
+select rowid, t.* from car_s2m t where periodo >= '202306';
+SELECT b.SID AS blocker_sid,
+       b.SERIAL# AS blocker_serial,
+       w.SID AS waiter_sid,
+       w.SERIAL# AS waiter_serial
+FROM   DBA_BLOCKERS b, DBA_WAITERS w
+WHERE  b.HOLDING_SESSION = w.BLOCKING_SESSION;
+select * from DBA_WAITERS
+
+
+
+
+app.get('/planta', async (req, res) => {
+  // Extrae información de personas en condición de jubilarse
+  // Usa la vista VW_CAR_SIGNOS  6/11/2023
+  
+  let periodo; // Inicializa la variable periodo
+  
+    try {
+  
+      console.log('Atendiendo ----------- /planta ...');    
+   
+        const connection = await oracledb.getConnection(oracleConfig);
+  
+        const resultDefaultPeriod = await connection.execute(`
+          SELECT max(periodo) as max_periodo
+          FROM LAPN810P.CAR_SIGNOS
+        `);
+  
+        periodo = resultDefaultPeriod.rows[0]['MAX_PERIODO'];
+  
+        console.log('MAX_PERIODO', periodo);         
+  
+      const resultPlanta = await connection.execute(`
+        SELECT COUNT(distinct(cuil)) as cantidad FROM LAPN810P.vw_car_signos
+        WHERE 
+        periodo=:periodo
+      `, [periodo]);
+
+      const resultPlantaM = await connection.execute(`
+        SELECT COUNT(distinct(cuil)) as cantidad FROM LAPN810P.vw_car_signos
+        WHERE genero='M' and
+        periodo=:periodo
+      `, [periodo]);
+
+      const resultPlantaF = await connection.execute(`
+        SELECT COUNT(distinct(cuil)) as cantidad FROM LAPN810P.vw_car_signos
+        WHERE genero='F' and
+        periodo=:periodo
+      `, [periodo]);
+
+      const resultFechaProcesado = await connection.execute(`
+      select prcesado  
+      from car_signos where 
+      periodo=:periodo
+      `, [periodo]);
+
+      const fechaProcesado = resultFechaProcesado.rows[0]['PRCESADO'];
+      
+      // Fecha original
+      const fechaOriginal = fechaProcesado ;
+
+      // Crear un objeto de fecha a partir de la fecha original
+      const fecha = new Date(fechaOriginal);
+
+      // Obtener los componentes de la fecha (día, mes, año)
+      const dia = fecha.getUTCDate();
+      const mes = fecha.getUTCMonth() + 1; // Los meses van de 0 a 11, por eso se suma 1
+      const anio = fecha.getUTCFullYear();
+
+      // Formatear la fecha al formato dd/mm/yyyy
+      const fechaFormateada = `${dia < 10 ? '0' : ''}${dia}/${mes < 10 ? '0' : ''}${mes}/${anio}`;
+
+      console.log(fechaFormateada); // Mostrará: 30/11/2023
+    
+      const countPlanta = resultPlanta.rows[0]['CANTIDAD'];
+      const countPlantaM = resultPlantaM.rows[0]['CANTIDAD'];      
+      const countPlantaF = resultPlantaF.rows[0]['CANTIDAD'];            
+
+      console.log( "countPlanta" , countPlanta ) ;
+
+     const lastUpdate  =  periodo ;      
+
+      let cadenaOriginal = periodo;
+      let periodoFrances = cadenaOriginal.substring(4) + '-' + cadenaOriginal.substring(0, 4);
+      
+      console.log(periodoFrances);
+
+      const responseJson = {
+        totales: countPlanta,
+        periodo: periodoFrances,
+        fechaProcesado: fechaFormateada,
+        plantahombres: countPlantaM,
+        plantamujeres: countPlantaF,                
+      };
+  
+      res.json(responseJson);
+    } catch (error) {
+      console.error('Error en la consulta SQL:', error);    
+      res.status(500).json({ error: 'Ocurrió un error al ejecutar la consulta.' });
+    }
+  });
+  
+
+Si hago esta consulta:
+
+        const resultPlanta = await connection.execute(`
+        SELECT 
+           COUNT(distinct cuil) as total,
+           COUNT(distinct CASE WHEN genero = 'M' THEN cuil END) as hombres,
+           COUNT(distinct CASE WHEN genero = 'F' THEN cuil END) as mujeres
+        FROM LAPN810P.vw_car_signos
+        WHERE periodo = :periodo
+     `, [periodo]);
+
+cómo reorganizo la obtención del resultado en este párrafo para tener los valores?
+
+    
+      const countPlanta = resultPlanta.rows[0]['CANTIDAD'];
+      const countPlantaM = resultPlantaM.rows[0]['CANTIDAD'];      
+      const countPlantaF = resultPlantaF.rows[0]['CANTIDAD'];            
+
