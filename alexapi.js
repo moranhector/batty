@@ -1904,6 +1904,79 @@ app.get('/planta_uor2', async (req, res) => {
 // FIN PLANTA ENDPOINT
 
 
+app.get('/futurosjubilados', async (req, res) => {
+
+  const connection = await oracledb.getConnection(oracleConfig);
+
+
+  try {
+
+
+
+    const resultDefaultPeriod = await connection.execute(`
+    SELECT max(periodo) as max_periodo
+    FROM LAPN810P.CAR_SIGNOS
+  `);
+
+    periodo = resultDefaultPeriod.rows[0]['MAX_PERIODO'];
+
+    console.log('MAX_PERIODO', periodo);
+
+    //const { JUR } = req.query; // Obtener el argumento JUR de la consulta
+    console.log(' PARAMETROS ', req.params)
+
+
+
+    console.log('Atendiendo futurosjubilados ...');
+
+
+    //const connection = await oracledb.getConnection(oracleConfig);
+
+    const resultJubilaciones = await connection.execute(`
+    select distinct p.std_id_person, pp.id_organization,
+    cuil, 
+    SUBSTR(nombreapellido, 1, 40) AS nombreapellido,
+    TO_CHAR(fechanacimiento, 'DD/MM/YYYY') AS fechanacimiento,
+    TO_CHAR( round( to_number(rtrim(trunc(months_between(sysdate,FECHANACIMIENTO)/12))))) AS edad,    
+    TO_CHAR(fechaingreso, 'DD/MM/YYYY') AS fechaingreso,    
+    genero, periodo, descripcionuor, s.dependencia , i.etiqueta, s.rats, s.clase,
+    j.sar_id_fondo_pens as last_cod_jub, 
+    E.STD_N_EXT_ORGESP as last_cod_jub_desc , 
+    j.dt_start as last_fecha_desde,    
+    j.dt_end as last_fecha_hasta,
+    j.sar_comment as last_observacion,
+    j.id_secuser, 
+    TO_CHAR(TO_DATE(j.dt_last_update), 'DD/MM/YYYY') AS fecha_actualiza           
+    from LAPN810P.vw_car_signos s
+    left join LAPN810P.car_instituciones i on
+    s.car = i.caracter and
+    s.jur = i.jurisdiccion and
+    s.uor = i.unidar_org and
+    s.dep = i.nro_dep
+    left JOIN LAPN810P.STD_PERSON P ON S.dni= P.STD_SSN
+    inner join LAPN810P.std_hr_period pp on p.std_id_person = pp.std_id_hr 
+    left JOIN LAPN810P.m4sar_h_fondo_pen J ON J.STD_ID_HR = P.STD_ID_PERSON
+    left JOIN LAPN810P.std_external_org E ON J.SAR_ID_FONDO_PENS=E.STD_ID_EXTERN_ORG    
+    where periodo=:periodo  and ajub='S'  and pp.id_organization in ( '0080', '0083' ) 
+    and ( j.dt_end  = TO_DATE('01/01/4000','DD/MM/YYYY')  or j.dt_end is null )
+    `, { periodo: periodo });
+
+
+    const responseJson = {
+      data: resultJubilaciones.rows
+    };
+
+    console.log('responseJson', responseJson);
+
+    res.json(responseJson); // Devolver el JSON como respuesta
+  } catch (error) {
+    console.error('Error al ejecutar la consulta:', error);
+    res.status(500).json({ error: 'Ocurrió un error al ejecutar la consulta.', detalle: error.message });
+  }
+});
+
+
+
 
 
 
