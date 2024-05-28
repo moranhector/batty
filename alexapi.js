@@ -1988,6 +1988,87 @@ app.get('/futurosjubilados', async (req, res) => {
 // NO TOCAR 
 // NO TOCAR SECCION LISTEN PORT
 
+app.get('/futurosjubiladoshisto/:documento', async (req, res) => {
+
+  const documento = req.params.documento;
+  const connection = await oracledb.getConnection(oracleConfig);
+
+  try {
+
+    const resultDefaultPeriod = await connection.execute(`
+    SELECT max(periodo) as max_periodo
+    FROM LAPN810P.CAR_SIGNOS
+  `);
+
+    periodo = resultDefaultPeriod.rows[0]['MAX_PERIODO'];
+
+    console.log('MAX_PERIODO', periodo);
+
+    //const { JUR } = req.query; // Obtener el argumento JUR de la consulta
+    console.log(' PARAMETROS ', req.params)
+
+
+
+    console.log('Atendiendo futurosjubilados historico ...');
+
+
+    //const connection = await oracledb.getConnection(oracleConfig);
+
+    const resultJubilaciones = await connection.execute(`
+    SELECT 
+      S.DNI, 
+      S.NOMBREAPELLIDO, 
+      J.STD_ID_HR AS id_m4, 
+      J.DT_START, 
+      J.DT_END,
+      J.SAR_ID_FONDO_PENS AS cod_jubilacion, 
+      E.STD_N_EXT_ORGESP, 
+      J.SAR_COMMENT AS observacion,
+      J.ID_SECUSER, 
+      TO_CHAR(TO_DATE(J.DT_LAST_UPDATE), 'DD/MM/YYYY') AS fecha_actualiza
+    FROM LAPN810P.vw_car_signos S
+    INNER JOIN STD_PERSON P ON S.dni = P.STD_SSN
+    INNER JOIN m4sar_h_fondo_pen J ON J.STD_ID_HR = P.STD_ID_PERSON
+    INNER JOIN std_external_org E ON J.SAR_ID_FONDO_PENS = E.STD_ID_EXTERN_ORG
+    WHERE J.ID_ORGANIZATION IN ('0080', '0083') 
+      AND S.PERIODO = :periodo  
+      AND S.AJUB = 'S'  
+      AND S.DNI = :documento
+    ORDER BY J.DT_START
+  `, { periodo: periodo, documento: documento });    
+
+  //   const resultJubilaciones = await connection.execute(`
+  //   SELECT S.DNI, S.NOMBREAPELLIDO, 
+  //   j.std_id_hr as id_m4,J.DT_START,J.DT_END ,j.sar_id_fondo_pens as cod_jubilacion, E.STD_N_EXT_ORGESP, j.sar_comment as observacion,
+  //    j.id_secuser, TO_CHAR(TO_DATE(j.dt_last_update), 'DD/MM/YYYY') AS fecha_actualiza
+  //  FROM LAPN810P.vw_car_signos S
+  //  INNER JOIN STD_PERSON P ON S.dni= P.STD_SSN
+  //  INNER JOIN m4sar_h_fondo_pen J ON J.STD_ID_HR =P.STD_ID_PERSON
+  //  INNER JOIN std_external_org E ON J.SAR_ID_FONDO_PENS=E.STD_ID_EXTERN_ORG
+  //  WHERE J.ID_ORGANIZATION in ('0080','0083') AND S.PERIODO = :periodo  and ajub='S'  
+  //  and dni = '10276434'
+  //  ORDER BY  J.DT_START
+  //   `, { periodo: periodo, documento: documento });
+
+
+    const responseJson = {
+      data: resultJubilaciones.rows
+    };
+
+    console.log('responseJson', responseJson);
+
+    res.json(responseJson); // Devolver el JSON como respuesta
+  } catch (error) {
+    console.error('Error al ejecutar la consulta:', error);
+    res.status(500).json({ error: 'Ocurrió un error al ejecutar la consulta.', detalle: error.message });
+  }
+});
+
+
+
+
+
+
 
 
 const PORT = 3000;
