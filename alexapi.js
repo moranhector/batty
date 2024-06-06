@@ -1955,10 +1955,15 @@ app.get('/futurosjubilados', async (req, res) => {
     s.dep = i.nro_dep
     left JOIN LAPN810P.STD_PERSON P ON S.dni= P.STD_SSN
     inner join LAPN810P.std_hr_period pp on p.std_id_person = pp.std_id_hr 
-    left JOIN LAPN810P.m4sar_h_fondo_pen J ON J.STD_ID_HR = P.STD_ID_PERSON
-    left JOIN LAPN810P.std_external_org E ON J.SAR_ID_FONDO_PENS=E.STD_ID_EXTERN_ORG    
+    left JOIN LAPN810P.m4sar_h_fondo_pen J ON J.STD_ID_HR = P.STD_ID_PERSON 
+    left join LAPN810P.m4sar_fondo_pens F on f.sar_id_fondo_pens=j.sar_id_fondo_pens
+    left JOIN (select * from LAPN810P.std_external_org E where e.id_organization in ( '0080', '0083' )) E ON J.SAR_ID_FONDO_PENS=E.STD_ID_EXTERN_ORG    
     where periodo=:periodo  and ajub='S'  and pp.id_organization in ( '0080', '0083' ) 
-    and ( j.dt_end  = TO_DATE('01/01/4000','DD/MM/YYYY')  or j.dt_end is null )
+    and ( j.dt_end   = (
+        SELECT MAX(j2.dt_end)
+        FROM LAPN810P.m4sar_h_fondo_pen j2
+        WHERE j2.STD_ID_HR = p.std_id_person
+    ) or j.dt_end is null )
     `, { periodo: periodo });
 
 
