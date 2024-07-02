@@ -2042,20 +2042,6 @@ app.get('/futurosjubiladoshisto/:documento', async (req, res) => {
     ORDER BY J.DT_START
   `, { periodo: periodo, documento: documento });    
 
-  //   const resultJubilaciones = await connection.execute(`
-  //   SELECT S.DNI, S.NOMBREAPELLIDO, 
-  //   j.std_id_hr as id_m4,J.DT_START,J.DT_END ,j.sar_id_fondo_pens as cod_jubilacion, E.STD_N_EXT_ORGESP, j.sar_comment as observacion,
-  //    j.id_secuser, TO_CHAR(TO_DATE(j.dt_last_update), 'DD/MM/YYYY') AS fecha_actualiza
-  //  FROM LAPN810P.vw_car_signos S
-  //  INNER JOIN STD_PERSON P ON S.dni= P.STD_SSN
-  //  INNER JOIN m4sar_h_fondo_pen J ON J.STD_ID_HR =P.STD_ID_PERSON
-  //  INNER JOIN std_external_org E ON J.SAR_ID_FONDO_PENS=E.STD_ID_EXTERN_ORG
-  //  WHERE J.ID_ORGANIZATION in ('0080','0083') AND S.PERIODO = :periodo  and ajub='S'  
-  //  and dni = '10276434'
-  //  ORDER BY  J.DT_START
-  //   `, { periodo: periodo, documento: documento });
-
-
     const responseJson = {
       data: resultJubilaciones.rows
     };
@@ -2071,6 +2057,106 @@ app.get('/futurosjubiladoshisto/:documento', async (req, res) => {
 
 
 
+app.get('/alcanzan_edad_fechas/:fechadesde/:fechahasta', async (req, res) => {
+
+  const fechaDesde = req.params.fechadesde;  
+  const fechaHasta = req.params.fechahasta;  
+
+
+  const fechaDesdeFormatted = fechaDesde.replace(/-/g, '/'); // Convertir de "DD-MM-YYYY" a "DD/MM/YYYY"
+  const fechaHastaFormatted = fechaHasta.replace(/-/g, '/');
+
+  console.log('Fecha desde:', fechaDesdeFormatted);
+  console.log('Fecha hasta:', fechaHastaFormatted);  
+
+  
+    const connection = await oracledb.getConnection(oracleConfig);
+  
+    try {
+  
+      const resultDefaultPeriod = await connection.execute(`
+      SELECT max(periodo) as max_periodo
+      FROM LAPN810P.CAR_SIGNOS
+    `);
+  
+      periodo = resultDefaultPeriod.rows[0]['MAX_PERIODO'];
+  
+      console.log('MAX_PERIODO', periodo);
+  
+      //const { JUR } = req.query; // Obtener el argumento JUR de la consulta
+      console.log(' PARAMETROS ', req.params)
+  
+  
+  
+      console.log('Atendiendo alcanza edad entre fechas ...');
+  
+  
+      //const connection = await oracledb.getConnection(oracleConfig);
+  
+      const resultJubilaciones = await connection.execute(`
+select distinct p.std_id_person, pp.id_organization,
+    cuil, 
+    SUBSTR(nombreapellido, 1, 40) AS nombreapellido,
+    TO_CHAR(fechanacimiento, 'DD/MM/YYYY') AS fechanacimiento,
+    TO_CHAR( round( to_number(rtrim(trunc(months_between(sysdate,FECHANACIMIENTO)/12))))) AS edad,    
+    TO_CHAR(fechaingreso, 'DD/MM/YYYY') AS fechaingreso,    
+    genero, periodo, descripcionuor, s.dependencia , i.etiqueta, s.rats, s.clase
+    from LAPN810P.car_signos s
+    left join LAPN810P.car_instituciones i on
+    s.lqhislegpuerca = i.caracter and
+    s.lqhislegpuerju = i.jurisdiccion and
+    s.lqhislegpueruo = i.unidar_org and
+    s.dependencia = i.nro_dep
+    left JOIN LAPN810P.STD_PERSON P ON S.dni= P.STD_SSN
+    inner join LAPN810P.std_hr_period pp on p.std_id_person = pp.std_id_hr 
+    where s.periodo= :periodo  and s.admin_persona='S' 
+    and rats<>'9999999' and estadolegajo=1
+    and pp.id_organization in ('0080','0083','0091','0081')
+    and ADD_MONTHS(s.fechanacimiento, 60 * 12) 
+    BETWEEN TO_DATE(:fechadesde, 'DD/MM/YYYY') AND TO_DATE(:fechahasta, 'DD/MM/YYYY')
+    and s.genero='F'
+        union
+        select distinct p.std_id_person, pp.id_organization,
+    cuil, 
+    SUBSTR(nombreapellido, 1, 40) AS nombreapellido,
+    TO_CHAR(fechanacimiento, 'DD/MM/YYYY') AS fechanacimiento,
+    TO_CHAR( round( to_number(rtrim(trunc(months_between(sysdate,FECHANACIMIENTO)/12))))) AS edad,    
+    TO_CHAR(fechaingreso, 'DD/MM/YYYY') AS fechaingreso,    
+    genero, periodo, descripcionuor, s.dependencia , i.etiqueta, s.rats, s.clase
+    from LAPN810P.car_signos s
+    left join LAPN810P.car_instituciones i on
+    s.lqhislegpuerca = i.caracter and
+    s.lqhislegpuerju = i.jurisdiccion and
+    s.lqhislegpueruo = i.unidar_org and
+    s.dependencia = i.nro_dep
+    left JOIN LAPN810P.STD_PERSON P ON S.dni= P.STD_SSN
+    inner join LAPN810P.std_hr_period pp on p.std_id_person = pp.std_id_hr 
+    where s.periodo= :periodo  and s.admin_persona='S' 
+    and rats<>'9999999' and estadolegajo=1
+    and  pp.id_organization in ('0080','0083','0091','0081')
+    and ADD_MONTHS(s.fechanacimiento, 65 * 12) 
+    BETWEEN 
+    TO_DATE(:fechadesde, 'DD/MM/YYYY') AND TO_DATE(:fechahasta, 'DD/MM/YYYY') 
+    and s.genero='M'
+    `, { 
+      fechadesde: fechaDesdeFormatted, 
+      fechahasta: fechaHastaFormatted,
+      periodo: periodo
+     });    
+  
+      const responseJson = {
+        data: resultJubilaciones.rows
+      };
+  
+      console.log('responseJson', responseJson);
+  
+      res.json(responseJson); // Devolver el JSON como respuesta
+    } catch (error) {
+      console.error('Error al ejecutar la consulta:', error);
+      res.status(500).json({ error: 'Ocurrió un error al ejecutar la consulta.', detalle: error.message });
+    }
+  });
+  
 
 
 

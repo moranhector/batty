@@ -11,7 +11,7 @@ const MY_CONSTANT = 'Mi valor constante';
   const oracleConfig = {
     user: "LAPN810P",
     password: "kHue-q173blJ4_xy",
-    connectString: 'dicdb-rrhhtst.mendoza.gov.ar:1521/RRHHPRD' 
+    connectString: 'dicdb-rrhhprd.mendoza.gov.ar:1521/RRHHPRD' 
   };
 
  
